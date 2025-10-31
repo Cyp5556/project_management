@@ -1,4 +1,3 @@
-```
 # 🧩 Project Management & Documentation Tool
 
 A **Confluence-style collaborative editor** combined with a **Jira-style Kanban board**, built as part of a take-home assignment.  
@@ -183,4 +182,3 @@ A short (~2 min) demo video covers:
 - Fluid and intuitive **UX interactions**  
 - Rich, modular **component design**  
 - Clear communication of **design and technical reasoning**
-```
