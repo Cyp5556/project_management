@@ -78,7 +78,7 @@ The goal of this project is to design and implement a **frontend system** capabl
 ---
 
 ## 📁 Folder Structure
-
+```
 src/
 ├── App.jsx 
 ├── main.jsx 
@@ -125,7 +125,7 @@ src/
 │
 └── routes/
 └── routes.jsx
-
+```
 ---
 
 ## 🧾 Documentation
