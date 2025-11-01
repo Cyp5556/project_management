@@ -1,13 +1,16 @@
-import { RouterProvider } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { AppProvider } from './contexts/AppContext';
-import router from './routes/routes';
+import { RouterProvider } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { AppProvider } from "./contexts/AppContext";
+import { CollaborationProvider } from "./contexts/CollaborationContext";
+import router from "./routes/routes";
 
 function App() {
   return (
     <ThemeProvider>
       <AppProvider>
-        <RouterProvider router={router} />
+        <CollaborationProvider>
+          <RouterProvider router={router} />
+        </CollaborationProvider>
       </AppProvider>
     </ThemeProvider>
   );

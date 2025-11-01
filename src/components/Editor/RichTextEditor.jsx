@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import * as Y from "yjs";
 import {
   Bold,
   Italic,
@@ -17,6 +18,7 @@ import {
   CalendarDays,
   MessageCircle,
   Users,
+  Clock,
 } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useApp } from "../../contexts/AppContext";
@@ -35,7 +37,7 @@ const RichTextEditor = ({ pageId, content, onChange, readOnly = false }) => {
   const [activeCursors, setActiveCursors] = useState({});
   const editorRef = useRef(null);
   const { isDark } = useTheme();
-  const { users, currentUser, saveVersion } = useApp();
+  const { users, currentUser, saveVersion, getVersionById } = useApp();
   const { doc, awareness, isOnline } = useCollaboration();
 
   // Track cursor position for mentions and slash commands
@@ -138,7 +140,9 @@ const RichTextEditor = ({ pageId, content, onChange, readOnly = false }) => {
 
     // Autosave version periodically
     const debounceTimer = setTimeout(() => {
-      saveVersion(pageId, newContent);
+      if (pageId) {
+        saveVersion(pageId, newContent);
+      }
     }, 5000);
 
     return () => clearTimeout(debounceTimer);
