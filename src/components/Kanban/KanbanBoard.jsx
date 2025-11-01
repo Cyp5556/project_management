@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, Plus, Settings, Edit2 } from "lucide-react";
-import { DragDropContext, Droppable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useApp } from "../../contexts/AppContext";
@@ -39,7 +39,7 @@ const KanbanBoard = () => {
     return (
       <div
         className={`p-8 ${
-          isDark ? "bg-gray-900" : "bg-white"
+          isDark ? "bg-gray-900 text-white" : "bg-white text-gray-900"
         } h-full flex items-center justify-center`}
       >
         <div className="text-center">
@@ -70,6 +70,7 @@ const KanbanBoard = () => {
 
       setColumns(newColumnOrder);
       updateBoard(projectId, { ...board, columns: newColumnOrder });
+      showToast("Column reordered");
       return;
     }
 
@@ -140,21 +141,42 @@ const KanbanBoard = () => {
       },
     });
     setNewColumnName("");
+    showToast(`Column "${newColumnName}" created`);
   };
 
   const updateColumn = (columnId, updates) => {
+    const oldColumn = columns.find((col) => col.id === columnId);
     const newColumns = columns.map((col) =>
       col.id === columnId ? { ...col, ...updates } : col
     );
+
+    // Update column colors if title changed
+    if (updates.title && oldColumn.title !== updates.title) {
+      const newColors = { ...columnColors };
+      newColors[updates.title] = newColors[oldColumn.title] || "bg-gray-200";
+      delete newColors[oldColumn.title];
+      setColumnColors(newColors);
+      updateBoard(projectId, { ...board, columns: newColumns, columnColors: newColors });
+    } else {
+      updateBoard(projectId, { ...board, columns: newColumns });
+    }
+
     setColumns(newColumns);
-    updateBoard(projectId, { ...board, columns: newColumns });
     setEditingColumn(null);
+    showToast("Column updated");
   };
 
   const deleteColumn = (columnId) => {
+    const column = columns.find((col) => col.id === columnId);
+    if (column.cards.length > 0) {
+      if (!window.confirm(`Delete column "${column.title}" and all its ${column.cards.length} card(s)?`)) {
+        return;
+      }
+    }
     const newColumns = columns.filter((col) => col.id !== columnId);
     setColumns(newColumns);
     updateBoard(projectId, { ...board, columns: newColumns });
+    showToast(`Column "${column.title}" deleted`);
   };
 
   const addCard = (columnId) => {
@@ -190,10 +212,24 @@ const KanbanBoard = () => {
     setColumns(newColumns);
     updateBoard(projectId, { ...board, columns: newColumns });
     setEditingCard(null);
+    addActivity({
+      type: "card_update",
+      user: currentUser.id,
+      resource: updatedCard.title,
+      timestamp: new Date().toISOString(),
+    });
     showToast("Card updated");
   };
 
   const deleteCard = (cardId) => {
+    const cardToDelete = columns
+      .flatMap((col) => col.cards)
+      .find((c) => c.id === cardId);
+    
+    if (!window.confirm(`Delete card "${cardToDelete?.title}"?`)) {
+      return;
+    }
+
     const newColumns = columns.map((col) => ({
       ...col,
       cards: col.cards.filter((c) => c.id !== cardId),
@@ -220,12 +256,14 @@ const KanbanBoard = () => {
           <button
             onClick={() => navigate(`/project/${projectId}`)}
             className={`p-2 rounded ${
-              isDark ? "hover:bg-gray-700" : "hover:bg-gray-200"
+              isDark ? "hover:bg-gray-700 text-gray-300" : "hover:bg-gray-200 text-gray-700"
             }`}
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-3xl font-bold">{board.name}</h1>
+          <h1 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+            {board.name}
+          </h1>
         </div>
       </div>
 
@@ -241,8 +279,8 @@ const KanbanBoard = () => {
               onClick={() => setShowColumnSettings(true)}
               className={`px-3 py-1 rounded-lg flex items-center gap-2 ${
                 isDark
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-100 hover:bg-gray-200"
+                  ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
               <Settings size={16} />
@@ -251,24 +289,28 @@ const KanbanBoard = () => {
           </div>
 
           {/* Add Column Form */}
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={newColumnName}
-              onChange={(e) => setNewColumnName(e.target.value)}
-              placeholder="New column name..."
-              className={`px-3 py-1 rounded-lg ${
-                isDark ? "bg-gray-700" : "bg-gray-100"
-              }`}
-            />
-            <button
-              onClick={addColumn}
-              className="px-3 py-1 rounded-lg bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Add Column
-            </button>
-          </div>
+          {canEdit(user.role) && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && addColumn()}
+                placeholder="New column name..."
+                className={`px-3 py-1 rounded-lg ${
+                  isDark ? "bg-gray-700 text-white placeholder-gray-400" : "bg-gray-100 text-gray-900 placeholder-gray-500"
+                }`}
+              />
+              <button
+                onClick={addColumn}
+                disabled={!newColumnName.trim()}
+                className="px-3 py-1 rounded-lg bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus size={16} />
+                Add Column
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -318,8 +360,8 @@ const KanbanBoard = () => {
         title="Column Settings"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">
-            Customize your board columns. Drag to reorder.
+          <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+            Customize your board columns. Click edit to modify or delete.
           </p>
 
           <div className="space-y-2">
@@ -332,24 +374,29 @@ const KanbanBoard = () => {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-4 h-4 rounded ${columnColors[column.title]}`}
+                    className={`w-4 h-4 rounded ${columnColors[column.title] || "bg-gray-200"}`}
                   />
-                  <span>{column.title}</span>
+                  <span className={isDark ? "text-white" : "text-gray-900"}>
+                    {column.title}
+                  </span>
+                  <span className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                    ({column.cards.length} cards)
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingColumn(column)}
                     className={`p-2 rounded hover:bg-opacity-80 ${
-                      isDark ? "hover:bg-gray-600" : "hover:bg-gray-200"
+                      isDark ? "hover:bg-gray-600 text-gray-300" : "hover:bg-gray-200 text-gray-700"
                     }`}
                   >
                     <Edit2 size={16} />
                   </button>
-                  {columns.length > 1 && (
+                  {columns.length > 1 && canDelete(user.role) && (
                     <button
                       onClick={() => deleteColumn(column.id)}
-                      className="p-2 rounded hover:bg-red-500 hover:text-white"
+                      className="p-2 rounded hover:bg-red-500 hover:text-white text-red-400"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -367,69 +414,73 @@ const KanbanBoard = () => {
         onClose={() => setEditingColumn(null)}
         title="Edit Column"
       >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Column Name
-            </label>
-            <input
-              type="text"
-              value={editingColumn?.title || ""}
-              onChange={(e) =>
-                setEditingColumn({ ...editingColumn, title: e.target.value })
-              }
-              className={`w-full p-3 rounded-lg ${
-                isDark ? "bg-gray-700" : "bg-gray-100"
-              }`}
-            />
-          </div>
+        {editingColumn && (
+          <div className="space-y-4">
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
+                Column Name
+              </label>
+              <input
+                type="text"
+                value={editingColumn?.title || ""}
+                onChange={(e) =>
+                  setEditingColumn({ ...editingColumn, title: e.target.value })
+                }
+                className={`w-full p-3 rounded-lg ${
+                  isDark ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900"
+                }`}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Column Color
-            </label>
-            <select
-              value={columnColors[editingColumn?.title]}
-              onChange={(e) => {
-                setColumnColors({
-                  ...columnColors,
-                  [editingColumn.title]: e.target.value,
-                });
-              }}
-              className={`w-full p-3 rounded-lg ${
-                isDark ? "bg-gray-700" : "bg-gray-100"
-              }`}
-            >
-              <option value="bg-gray-200">Gray</option>
-              <option value="bg-blue-200">Blue</option>
-              <option value="bg-green-200">Green</option>
-              <option value="bg-yellow-200">Yellow</option>
-              <option value="bg-red-200">Red</option>
-              <option value="bg-purple-200">Purple</option>
-            </select>
-          </div>
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
+                Column Color
+              </label>
+              <select
+                value={columnColors[editingColumn?.title] || "bg-gray-200"}
+                onChange={(e) => {
+                  setColumnColors({
+                    ...columnColors,
+                    [editingColumn.title]: e.target.value,
+                  });
+                }}
+                className={`w-full p-3 rounded-lg ${
+                  isDark ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900"
+                }`}
+              >
+                <option value="bg-gray-200">Gray</option>
+                <option value="bg-blue-200">Blue</option>
+                <option value="bg-green-200">Green</option>
+                <option value="bg-yellow-200">Yellow</option>
+                <option value="bg-red-200">Red</option>
+                <option value="bg-purple-200">Purple</option>
+                <option value="bg-pink-200">Pink</option>
+                <option value="bg-indigo-200">Indigo</option>
+              </select>
+            </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <button
-              onClick={() => setEditingColumn(null)}
-              className={`px-4 py-2 rounded ${
-                isDark ? "bg-gray-700" : "bg-gray-200"
-              }`}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                updateColumn(editingColumn.id, {
-                  title: editingColumn.title,
-                });
-              }}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Save Changes
-            </button>
+            <div className="flex justify-end gap-2 pt-4">
+              <button
+                onClick={() => setEditingColumn(null)}
+                className={`px-4 py-2 rounded ${
+                  isDark ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-900"
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  updateColumn(editingColumn.id, {
+                    title: editingColumn.title,
+                  });
+                }}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
 
       {/* Edit Card Modal */}
@@ -441,7 +492,9 @@ const KanbanBoard = () => {
         {editingCard && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Title</label>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
+                Title
+              </label>
               <input
                 type="text"
                 value={editingCard.title}
@@ -449,14 +502,14 @@ const KanbanBoard = () => {
                   setEditingCard({ ...editingCard, title: e.target.value })
                 }
                 className={`w-full p-3 rounded-lg ${
-                  isDark ? "bg-gray-700" : "bg-gray-100"
+                  isDark ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900"
                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 placeholder="Card title"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
                 Description
               </label>
               <textarea
@@ -468,7 +521,7 @@ const KanbanBoard = () => {
                   })
                 }
                 className={`w-full p-3 rounded-lg h-32 ${
-                  isDark ? "bg-gray-700" : "bg-gray-100"
+                  isDark ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900"
                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 placeholder="Add a description..."
               />
@@ -476,7 +529,7 @@ const KanbanBoard = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
                   Assignee
                 </label>
                 <select
@@ -485,7 +538,7 @@ const KanbanBoard = () => {
                     setEditingCard({ ...editingCard, assignee: e.target.value })
                   }
                   className={`w-full p-3 rounded-lg ${
-                    isDark ? "bg-gray-700" : "bg-gray-100"
+                    isDark ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900"
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 >
                   {MOCK_USERS.map((u) => (
@@ -497,7 +550,7 @@ const KanbanBoard = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
                   Due Date
                 </label>
                 <input
@@ -507,14 +560,14 @@ const KanbanBoard = () => {
                     setEditingCard({ ...editingCard, dueDate: e.target.value })
                   }
                   className={`w-full p-3 rounded-lg ${
-                    isDark ? "bg-gray-700" : "bg-gray-100"
+                    isDark ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900"
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
                 Labels (comma-separated)
               </label>
               <input
@@ -530,7 +583,7 @@ const KanbanBoard = () => {
                   })
                 }
                 className={`w-full p-3 rounded-lg ${
-                  isDark ? "bg-gray-700" : "bg-gray-100"
+                  isDark ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900"
                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 placeholder="Design, High Priority, Bug"
               />
@@ -551,8 +604,8 @@ const KanbanBoard = () => {
                   onClick={() => setEditingCard(null)}
                   className={`px-4 py-2 rounded-lg ${
                     isDark
-                      ? "bg-gray-700 hover:bg-gray-600"
-                      : "bg-gray-200 hover:bg-gray-300"
+                      ? "bg-gray-700 hover:bg-gray-600 text-white"
+                      : "bg-gray-200 hover:bg-gray-300 text-gray-900"
                   } transition-colors`}
                 >
                   Cancel
