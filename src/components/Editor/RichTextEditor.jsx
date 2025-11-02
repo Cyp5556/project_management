@@ -41,6 +41,14 @@ const RichTextEditor = ({ pageId, content, onChange, readOnly = false }) => {
   const { users, currentUser, saveVersion, getVersionById } = useApp();
   const { doc, awareness, isOnline } = useCollaboration();
 
+  if (!doc) {
+  return (
+    <div className="flex items-center justify-center h-full text-gray-500">
+      Connecting to collaboration server...
+    </div>
+  );
+}
+
   // Track cursor position for mentions and slash commands
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 });
 
@@ -48,9 +56,16 @@ const RichTextEditor = ({ pageId, content, onChange, readOnly = false }) => {
   const { addActivity } = useActivity();
 
   useEffect(() => {
-    if (!doc || !awareness) return;
+  if (!doc || !awareness) {
+    console.warn("Doc or awareness not ready yet");
+    return;
+  }
 
     const ytext = doc.getText("content");
+  if (!ytext) {
+    console.warn("Y.Text not ready");
+    return;
+  }
     const undoManager = new Y.UndoManager(ytext);
 
     // Initialize content
