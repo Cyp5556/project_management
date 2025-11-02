@@ -1,20 +1,17 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "path";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
+    alias: {},
+  },
+  optimizeDeps: {
+    include: ["yjs", "y-protocols", "y-websocket"]
   },
   build: {
     rollupOptions: {
-      external: ["yjs", "y-websocket"], 
+      external: [],
     },
   },
-  optimizeDeps: {
-    include: ["yjs", "y-websocket"], 
-  },
-});
+})
