@@ -127,19 +127,27 @@ const PageView = () => {
   const user = MOCK_USERS.find(u => u.id === currentUser.id);
 
   return (
-    <div className={`h-full flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+    <div
+      className={`h-full flex flex-col ${isDark ? "bg-gray-900" : "bg-white"}`}
+    >
       {/* Header */}
-      <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div
+        className={`p-6 border-b ${
+          isDark ? "border-gray-700" : "border-gray-200"
+        }`}
+      >
         <div className="flex items-center gap-4 mb-4">
           <button
             onClick={() => navigate(`/project/${projectId}`)}
-            className={`p-2 rounded ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+            className={`p-2 rounded ${
+              isDark ? "hover:bg-gray-700" : "hover:bg-gray-200"
+            }`}
           >
             <ArrowLeft size={20} />
           </button>
           <h1 className="text-3xl font-bold">{page.title}</h1>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-sm text-gray-500">
             <div className="flex items-center gap-2">
@@ -151,19 +159,21 @@ const PageView = () => {
               <span>{formatDateTime(versions[0]?.timestamp)}</span>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <button
               onClick={() => setShowVersions(!showVersions)}
               className={`px-4 py-2 rounded flex items-center gap-2 ${
-                isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                isDark
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-gray-200 hover:bg-gray-300"
               } transition-colors`}
             >
               <Clock size={16} />
               Versions ({versions.length})
             </button>
-            {canEdit(user.role) && (
-              isEditing ? (
+            {canEdit(user.role) &&
+              (isEditing ? (
                 <button
                   onClick={handleSave}
                   className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors flex items-center gap-2"
@@ -179,26 +189,35 @@ const PageView = () => {
                   <Edit2 size={16} />
                   Edit
                 </button>
-              )
-            )}
+              ))}
           </div>
         </div>
       </div>
 
       {/* Version History */}
       {showVersions && (
-        <div className={`p-6 border-b ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+        <div
+          className={`p-6 border-b ${
+            isDark
+              ? "border-gray-700 bg-gray-800"
+              : "border-gray-200 bg-gray-50"
+          }`}
+        >
           <h3 className="font-semibold text-lg mb-4">Version History</h3>
           <div className="space-y-3">
             {versions.map((version, idx) => {
-              const author = MOCK_USERS.find(u => u.id === version.author);
+              const author = MOCK_USERS.find((u) => u.id === version.author);
               return (
-                <div 
-                  key={version.id} 
-                  className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} flex justify-between items-center shadow`}
+                <div
+                  key={version.id}
+                  className={`p-4 rounded-lg ${
+                    isDark ? "bg-gray-700" : "bg-white"
+                  } flex justify-between items-center shadow`}
                 >
                   <div>
-                    <div className="font-medium">Version {versions.length - idx}</div>
+                    <div className="font-medium">
+                      Version {versions.length - idx}
+                    </div>
                     <div className="text-sm text-gray-500 flex items-center gap-2 mt-1">
                       <span>{author?.name}</span>
                       <span>•</span>
@@ -228,9 +247,16 @@ const PageView = () => {
       {/* Content */}
       <div className="flex-1 overflow-auto">
         {isEditing ? (
-          <RichTextEditor content={content} onChange={setContent} />
+          <RichTextEditor
+            pageId={pageId}
+            content={content}
+            onChange={setContent}
+            readOnly={false}
+          />
         ) : (
-          <div className={`p-8 max-w-4xl mx-auto ${isDark ? 'prose-invert' : ''}`}>
+          <div
+            className={`p-8 max-w-4xl mx-auto ${isDark ? "prose-invert" : ""}`}
+          >
             {renderMarkdown(content)}
           </div>
         )}
