@@ -1,30 +1,42 @@
-import { useState } from 'react';
-import { Filter } from 'lucide-react';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useApp } from '../../contexts/AppContext';
-import { MOCK_USERS } from '../../data/mockData';
-import ActivityItem from './ActivityItem';
+import { useState } from "react";
+import { Filter, Activity } from "lucide-react";
+import { useTheme } from "../../contexts/ThemeContext";
+import { useApp } from "../../contexts/AppContext";
+import { MOCK_USERS } from "../../data/mockData";
+import ActivityItem from "./ActivityItem";
 
 const ActivityFeed = () => {
   const { isDark } = useTheme();
   const { activities } = useApp();
-  const [filterType, setFilterType] = useState('all');
-  const [filterUser, setFilterUser] = useState('all');
+  const [filterType, setFilterType] = useState("all");
+  const [filterUser, setFilterUser] = useState("all");
 
-  const filteredActivities = activities.filter(activity => {
-    if (filterType !== 'all' && activity.type !== filterType) return false;
-    if (filterUser !== 'all' && activity.user !== filterUser) return false;
+  const filteredActivities = activities.filter((activity) => {
+    if (filterType !== "all" && activity.type !== filterType) return false;
+    if (filterUser !== "all" && activity.user !== filterUser) return false;
     return true;
   });
 
-  const activityTypes = ['all', 'page_edit', 'card_move', 'card_create', 'card_delete'];
+  const activityTypes = [
+    "all",
+    "page_edit",
+    "card_move",
+    "card_create",
+    "card_delete",
+  ];
 
   return (
-    <div className={`h-full flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+    <div
+      className={`h-full flex flex-col ${isDark ? "bg-gray-900" : "bg-white"}`}
+    >
       {/* Header */}
-      <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div
+        className={`p-6 border-b ${
+          isDark ? "border-gray-700" : "border-gray-200"
+        }`}
+      >
         <h1 className="text-3xl font-bold mb-4">Activity Feed</h1>
-        
+
         {/* Filters */}
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-2">
@@ -32,12 +44,16 @@ const ActivityFeed = () => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className={`px-3 py-2 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              className={`px-3 py-2 rounded-lg ${
+                isDark ? "bg-gray-700" : "bg-gray-100"
+              } focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
               <option value="all">All Types</option>
-              {activityTypes.slice(1).map(type => (
+              {activityTypes.slice(1).map((type) => (
                 <option key={type} value={type}>
-                  {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  {type
+                    .replace("_", " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase())}
                 </option>
               ))}
             </select>
@@ -46,15 +62,23 @@ const ActivityFeed = () => {
           <select
             value={filterUser}
             onChange={(e) => setFilterUser(e.target.value)}
-            className={`px-3 py-2 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
+            className={`px-3 py-2 rounded-lg ${
+              isDark ? "bg-gray-700" : "bg-gray-100"
+            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
           >
             <option value="all">All Users</option>
-            {MOCK_USERS.map(user => (
-              <option key={user.id} value={user.id}>{user.name}</option>
+            {MOCK_USERS.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
             ))}
           </select>
 
-          <div className={`px-3 py-2 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div
+            className={`px-3 py-2 rounded-lg ${
+              isDark ? "bg-gray-700" : "bg-gray-100"
+            }`}
+          >
             {filteredActivities.length} activities
           </div>
         </div>
@@ -64,7 +88,7 @@ const ActivityFeed = () => {
       <div className="flex-1 overflow-auto p-6">
         <div className="space-y-3 max-w-4xl">
           {filteredActivities.length > 0 ? (
-            filteredActivities.map(activity => (
+            filteredActivities.map((activity) => (
               <ActivityItem key={activity.id} activity={activity} />
             ))
           ) : (

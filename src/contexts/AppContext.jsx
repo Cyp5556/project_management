@@ -1,6 +1,8 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useMemo } from "react";
 import { INITIAL_PROJECTS, MOCK_USERS } from "../data/mockData";
 import { generateId } from "../utils/helpers";
+import { hasPermission, PERMISSIONS } from "../utils/permissions";
+import { useAuth } from "./AuthContext";
 
 // Mock version history data structure
 const versionHistory = {};
@@ -16,9 +18,9 @@ export const useApp = () => {
 };
 
 export const AppProvider = ({ children }) => {
+  const { user: currentUser, loading: authLoading } = useAuth();
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
   const [currentProject, setCurrentProject] = useState(INITIAL_PROJECTS[0]);
-  const [currentUser] = useState(MOCK_USERS[0]);
   const [activities, setActivities] = useState([]);
   const [toast, setToast] = useState(null);
   const [versions, setVersions] = useState({});
@@ -117,6 +119,69 @@ export const AppProvider = ({ children }) => {
     return diff;
   };
 
+  // Memoized permission checks for the current user
+  const userPermissions = useMemo(
+    () => ({
+      canEditContent: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.EDIT_CONTENT
+      ),
+      canManageProjects: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.MANAGE_PROJECTS
+      ),
+      canDeleteContent: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.DELETE_PROJECT
+      ),
+      canManageUsers: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.MANAGE_USERS
+      ),
+      canManageRoles: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.MANAGE_ROLES
+      ),
+      canInviteUsers: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.INVITE_USERS
+      ),
+      canCreateBoards: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.CREATE_BOARD
+      ),
+      canMoveCards: hasPermission(currentUser?.role, PERMISSIONS.MOVE_CARDS),
+      canCreateCards: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.CREATE_CARDS
+      ),
+      canEditCards: hasPermission(currentUser?.role, PERMISSIONS.EDIT_CARDS),
+      canDeleteCards: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.DELETE_CARDS
+      ),
+      canCreatePages: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.CREATE_PAGES
+      ),
+      canEditPages: hasPermission(currentUser?.role, PERMISSIONS.EDIT_PAGES),
+      canDeletePages: hasPermission(
+        currentUser?.role,
+        PERMISSIONS.DELETE_PAGES
+      ),
+    }),
+    [currentUser?.role]
+  );
+
+  // Check if user has a specific permission
+  const checkPermission = (permission) =>
+    hasPermission(currentUser.role, permission);
+
+  // Don't render children until auth is loaded
+  if (authLoading) {
+    return null;
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -138,6 +203,9 @@ export const AppProvider = ({ children }) => {
         getVersionHistory,
         saveVersion,
         compareVersions,
+        // Permission-related values
+        userPermissions,
+        checkPermission,
       }}
     >
       {children}

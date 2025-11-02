@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import * as Y from "yjs";
+import { useActivity } from "../../contexts/ActivityContext";
 import {
   Bold,
   Italic,
@@ -44,6 +45,8 @@ const RichTextEditor = ({ pageId, content, onChange, readOnly = false }) => {
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 });
 
   // Set up collaboration
+  const { addActivity } = useActivity();
+
   useEffect(() => {
     if (!doc || !awareness) return;
 
@@ -60,6 +63,15 @@ const RichTextEditor = ({ pageId, content, onChange, readOnly = false }) => {
       const newContent = ytext.toString();
       setEditorContent(newContent);
       onChange?.(newContent);
+
+      // Add activity for significant changes
+      if (Math.abs(newContent.length - editorContent.length) > 10) {
+        addActivity({
+          type: "page_edit",
+          resource: pageId,
+          details: `Made changes to the document`,
+        });
+      }
     };
 
     ytext.observe(observer);

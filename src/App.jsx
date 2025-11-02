@@ -1,18 +1,27 @@
-import { RouterProvider } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
 import { CollaborationProvider } from "./contexts/CollaborationContext";
-import router from "./routes/routes";
+import { ActivityProvider } from "./contexts/ActivityContext";
+import AppRoutes from "./routes/routes";
 
 function App() {
   return (
-    <ThemeProvider>
-      <AppProvider>
-        <CollaborationProvider>
-          <RouterProvider router={router} />
-        </CollaborationProvider>
-      </AppProvider>
-    </ThemeProvider>
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          {/* AppProvider must wrap Collaboration + Activity */}
+          <AppProvider>
+            <CollaborationProvider>
+              <ActivityProvider>
+                <AppRoutes />
+              </ActivityProvider>
+            </CollaborationProvider>
+          </AppProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 
