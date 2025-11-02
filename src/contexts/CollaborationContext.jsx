@@ -15,7 +15,11 @@ export function CollaborationProvider({ children }) {
 
   useEffect(() => {
     const ydoc = new Y.Doc();
-    const ws = new WebSocket("ws://localhost:3001");
+    const wsProvider = new WebsocketProvider(
+      "ws://projectmanagement-chaitanya241005-gmailcoms-projects.vercel.app",
+      "project-management", 
+      ydoc
+    );
 
     let connected = false;
 
